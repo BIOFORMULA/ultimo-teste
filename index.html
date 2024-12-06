@@ -1,160 +1,143 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Raspadinha Virtual Realista</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f0f0f0;
-            overflow: hidden;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Raspadinha Biofórmula</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      background-color: #f0f0f0;
+      height: 100vh;
+      overflow: hidden; /* Impede a rolagem da página */
+    }
 
-        @keyframes piscando {
-            0% { color: #00A859; }
-            50% { color: #0038A8; }
-            100% { color: #00A859; }
-        }
+    h1 {
+      font-size: 1.5em;
+      text-align: center;
+      color: #000;
+      animation: blink 1s infinite;
+      margin-bottom: 20px;
+    }
 
-        h2 {
-            font-size: 24px;
-            animation: piscando 1.5s infinite;
-        }
+    @keyframes blink {
+      0%, 50% {
+        color: #002776; /* Azul da bandeira do Brasil */
+      }
+      100% {
+        color: #00c8b3; /* Verde água (mar de Maceió) */
+      }
+    }
 
-        #raspadinha-container {
-            position: relative;
-            width: 400px; /* Largura fixa */
-            height: 200px; /* Altura fixa */
-            touch-action: none;
-            margin-top: 20px;
-        }
+    .raspadinha-container {
+      position: relative;
+      width: 400px; /* Largura fixa */
+      height: 200px; /* Altura fixa */
+      overflow: hidden;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
 
-        canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            cursor: pointer;
-        }
+    .imagem-fundo {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
 
-        img {
-            width: 100%;
-            height: 100%;
-            border-radius: 10px;
-        }
-    </style>
+    .imagem-capa {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
-    <!-- Texto piscando -->
-    <h2>Raspadinha Biofórmula</h2>
-    
-    <div id="raspadinha-container">
-        <!-- Imagem de fundo (prêmio) -->
-        <!-- Substitua 'premio.jpg' pelo nome da sua imagem do prêmio -->
-        <img src="atualizadopremio.png" alt="Prêmio"> <!-- Imagem do prêmio -->
-        
-        <!-- Canvas para criar a camada de raspagem -->
-        <canvas id="raspadinha"></canvas>
-    </div>
+  <h1>Raspadinha Biofórmula</h1>
+  <div class="raspadinha-container">
+    <img src="atualizadopremio.png" alt="Imagem de fundo" class="imagem-fundo">
+    <canvas class="imagem-capa"></canvas>
+  </div>
 
-    <script>
-        const canvas = document.getElementById('raspadinha');
-        const ctx = canvas.getContext('2d');
-        const container = document.getElementById('raspadinha-container');
-        const width = container.offsetWidth;
-        const height = container.offsetHeight;
+  <script>
+    const canvas = document.querySelector('.imagem-capa');
+    const ctx = canvas.getContext('2d');
+    const container = document.querySelector('.raspadinha-container');
+    const fundo = document.querySelector('.imagem-fundo');
 
-        const devicePixelRatio = window.devicePixelRatio || 1;
-        canvas.width = width * devicePixelRatio;
-        canvas.height = height * devicePixelRatio;
-        canvas.style.width = `${width}px`;
-        canvas.style.height = `${height}px`;
-        ctx.scale(devicePixelRatio, devicePixelRatio);
+    // Configurar o canvas
+    canvas.width = 400; // Largura fixa
+    canvas.height = 200; // Altura fixa
 
-        // Imagem da capa (substitua 'capa.jpg' pelo nome da sua imagem da capa)
-        const capa = new Image();
-        capa.src = 'capa0.jpg'; // Substitua 'capa.jpg' pelo nome da sua capa
-        capa.onload = () => {
-            ctx.drawImage(capa, 0, 0, width, height);
-        };
+    // Imagem de capa (cor sólida ou imagem)
+    const capa = new Image();
+    capa.src = 'capa0.jpg'; // Substitua pelo caminho da sua imagem de capa
+    capa.onload = () => {
+      ctx.drawImage(capa, 0, 0, canvas.width, canvas.height);
+    };
 
-        const clearArea = (x, y) => {
-            ctx.globalCompositeOperation = 'destination-out'; // Apagar a camada superior
-            ctx.beginPath();
-            ctx.arc(x, y, 20, 0, Math.PI * 2, false);
-            ctx.fill();
-        };
+    // Configuração de raspagem
+    let isDrawing = false;
 
-        let isDrawing = false;
+    const startDrawing = (e) => {
+      isDrawing = true;
+      draw(e);
+    };
 
-        // Funções para eventos de toque (mobile)
-        const enableTouchEvents = () => {
-            canvas.addEventListener('touchstart', (e) => {
-                e.preventDefault(); // Impede a rolagem padrão
-                isDrawing = true;
-                const rect = canvas.getBoundingClientRect();
-                const x = (e.touches[0].clientX - rect.left) * devicePixelRatio;
-                const y = (e.touches[0].clientY - rect.top) * devicePixelRatio;
-                clearArea(x, y);
-            });
+    const stopDrawing = () => {
+      isDrawing = false;
+      ctx.beginPath();
+    };
 
-            canvas.addEventListener('touchmove', (e) => {
-                e.preventDefault();
-                if (isDrawing) {
-                    const rect = canvas.getBoundingClientRect();
-                    const x = (e.touches[0].clientX - rect.left) * devicePixelRatio;
-                    const y = (e.touches[0].clientY - rect.top) * devicePixelRatio;
-                    clearArea(x, y);
-                }
-            });
+    const draw = (e) => {
+      if (!isDrawing) return;
 
-            canvas.addEventListener('touchend', () => {
-                isDrawing = false;
-            });
-        };
+      // Coordenadas para toque ou mouse
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+      const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
 
-        // Funções para eventos de mouse (desktop)
-        const enableMouseEvents = () => {
-            canvas.addEventListener('mousedown', (e) => {
-                isDrawing = true;
-                const rect = canvas.getBoundingClientRect();
-                const x = (e.clientX - rect.left) * devicePixelRatio;
-                const y = (e.clientY - rect.top) * devicePixelRatio;
-                clearArea(x, y);
-            });
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath();
+      ctx.arc(x, y, 20, 0, Math.PI * 2);
+      ctx.fill();
+    };
 
-            canvas.addEventListener('mousemove', (e) => {
-                if (isDrawing) {
-                    const rect = canvas.getBoundingClientRect();
-                    const x = (e.clientX - rect.left) * devicePixelRatio;
-                    const y = (e.clientY - rect.top) * devicePixelRatio;
-                    clearArea(x, y);
-                }
-            });
+    // Prevenir ações de rolagem e zoom no dispositivo móvel
+    const preventDefaultTouch = (e) => {
+      e.preventDefault();
+    };
 
-            canvas.addEventListener('mouseup', () => {
-                isDrawing = false;
-            });
+    // Verificar se o dispositivo é móvel
+    const isMobile = /Mobi|Android/i.test(navigator.userAgent);
 
-            canvas.addEventListener('mouseleave', () => {
-                isDrawing = false;
-            });
-        };
+    // Se for dispositivo móvel, configura os eventos de toque
+    if (isMobile) {
+      // Prevenir rolagem e zoom no toque
+      document.body.addEventListener('touchstart', preventDefaultTouch, { passive: false });
+      document.body.addEventListener('touchmove', preventDefaultTouch, { passive: false });
 
-        // Detectar se o dispositivo é móvel ou desktop
-        if ('ontouchstart' in window) {
-            enableTouchEvents(); // Ativar eventos de toque para dispositivos móveis
-        } else {
-            enableMouseEvents(); // Ativar eventos de mouse para desktop
-        }
-    </script>
+      canvas.addEventListener('touchstart', startDrawing);
+      canvas.addEventListener('touchmove', draw);
+      canvas.addEventListener('touchend', stopDrawing);
+      canvas.addEventListener('touchcancel', stopDrawing);
+    } else {
+      // Para desktop, configurar eventos de mouse
+      canvas.addEventListener('mousedown', startDrawing);
+      canvas.addEventListener('mousemove', draw);
+      canvas.addEventListener('mouseup', stopDrawing);
+      canvas.addEventListener('mouseleave', stopDrawing);
+    }
+  </script>
 </body>
 </html>
